@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.panservice.Entity.pandto;
-import com.example.panservice.Response.Panresponse;
+//import com.example.panservice.Response.Panresponse;
 import com.example.panservice.Service.Panservice;
 
 @RestController
@@ -26,10 +26,17 @@ public class pancontroller {
 	
 	
 
+
+	
+	
 	@PostMapping("pan/fetch")
-	public ResponseEntity<Panresponse>PanDetails(@RequestBody pandto dto)
+	public Object PanDetails(@RequestBody pandto dto)
 	{
-		Panresponse response=panservice.getPanDetails(dto);
-		return new ResponseEntity<>(response,HttpStatus.OK);
+//		Panresponse response=panservice.getPanDetails(dto);
+	return ResponseEntity.ok().body(panservice.getPanDetails(dto));
 	}
+	
+	
+	
+	
 }

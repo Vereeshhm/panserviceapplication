@@ -14,7 +14,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import com.example.panservice.Entity.pandto;
-import com.example.panservice.Response.Panresponse;
+//import com.example.panservice.Response.Panresponse;
 
 import com.example.panservice.Service.Panservice;
 import com.example.panservice.Utils.PropertiesConfig;
@@ -44,7 +44,7 @@ public class PanServiceImpl implements Panservice {
 	}
 
 	@Override
-	public Panresponse getPanDetails(pandto dto) {
+	public Object getPanDetails(pandto dto) {
 
 //		panerrorstatus panerrorstatus = new panerrorstatus();
 
@@ -59,10 +59,12 @@ public class PanServiceImpl implements Panservice {
 		HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
 
 		System.out.println("Requestbody  " + requestBody);
-//		 Panresponse response = restTemplate.postForObject(APIURL, request, Panresponse.class);
-
+//		Object response = restTemplate.postForObject(APIURL, request,Object.class);
+//		return response;
+		
+		
 		try {
-			Panresponse response = restTemplate.postForObject(APIURL, request, Panresponse.class);
+			Object response = restTemplate.postForObject(APIURL, request,Object.class);
 			return response;
 		} catch (HttpClientErrorException.BadRequest e) {
 			String errorMessage = e.getResponseBodyAsString();
