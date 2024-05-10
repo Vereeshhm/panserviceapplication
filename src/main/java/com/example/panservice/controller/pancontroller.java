@@ -16,27 +16,13 @@ import com.example.panservice.Service.Panservice;
 @RestController
 public class pancontroller {
 
-	
-	
-	
 	@Autowired
 	Panservice panservice;
-	
 
-	
-	
-
-
-	
-	
 	@PostMapping("pan/fetch")
-	public Object PanDetails(@RequestBody pandto dto)
-	{
-//		Panresponse response=panservice.getPanDetails(dto);
-	return ResponseEntity.ok().body(panservice.getPanDetails(dto));
+	public Object PanDetails(@RequestBody pandto dto) {
+
+		return ResponseEntity.ok().body(panservice.getPanDetails(dto));
 	}
-	
-	
-	
-	
+
 }
