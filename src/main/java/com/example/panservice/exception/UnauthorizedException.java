@@ -1,8 +1,13 @@
 package com.example.panservice.exception;
 
-public class UnauthorizedException extends RuntimeException{
+public class UnauthorizedException extends RuntimeException {
 
-	 public UnauthorizedException(String message) {
-	        super(message);
-	    }
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	public UnauthorizedException(String message) {
+		super(message);
+	}
 }

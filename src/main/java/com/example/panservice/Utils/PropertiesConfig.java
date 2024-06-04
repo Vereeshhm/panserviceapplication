@@ -8,9 +8,7 @@ import org.springframework.context.annotation.PropertySource;
 @PropertySource("file:src/main/resources/application.properties")
 public class PropertiesConfig {
 
-	
-
-	@Value("${Pan.ApiURl}")                      
+	@Value("${Pan.ApiURl}")
 	private String PanApiURL;
 
 	public String getPanApiURL() {
@@ -19,9 +17,6 @@ public class PropertiesConfig {
 
 	public void setPanApiURL(String panApiURL) {
 		PanApiURL = panApiURL;
-	} 
-	
-	
-	
-	
+	}
+
 }

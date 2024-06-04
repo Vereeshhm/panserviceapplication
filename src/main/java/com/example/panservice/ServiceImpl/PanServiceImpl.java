@@ -1,38 +1,32 @@
 package com.example.panservice.ServiceImpl;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import com.example.panservice.Entity.Panrequest;
+import com.example.panservice.Entity.ApiLog;
 import com.example.panservice.Entity.pandto;
-//import com.example.panservice.Response.Panresponse;
-
+import com.example.panservice.Repository.ApiLogRepository;
 import com.example.panservice.Service.Panservice;
 import com.example.panservice.Utils.PropertiesConfig;
 import com.example.panservice.exception.InvalidEmptyPanException;
 import com.example.panservice.exception.InvalidIndividualException;
 import com.example.panservice.exception.InvalidPanNumberException;
 import com.example.panservice.exception.Missingnumberexeception;
-
 import com.example.panservice.exception.UnauthorizedException;
+import com.example.panservice.exception.UpstreamDownException;
+import com.google.gson.Gson;
 
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Service
 public class PanServiceImpl implements Panservice {
@@ -40,6 +34,9 @@ public class PanServiceImpl implements Panservice {
 	private final RestTemplate restTemplate;
 
 	private final String apiKey;
+
+	@Autowired
+	ApiLogRepository apiLogRepository;
 
 	private static final Logger logger = LoggerFactory.getLogger(PanServiceImpl.class);
 
@@ -53,10 +50,15 @@ public class PanServiceImpl implements Panservice {
 	}
 
 	@Override
-	public Object getPanDetails(pandto dto) {
+	public String getPanDetails(pandto dto, HttpServletRequest request, HttpServletResponse response) {
 
 		String APIURL = propertiesConfig.getPanApiURL();
-		Panrequest panrequest = new Panrequest();
+
+		String requestUrl = request.getRequestURI().toString();
+
+		int statusCode = response.getStatus();
+
+		pandto panrequest = new pandto();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		headers.set("Authorization", apiKey); // Include API key directly without "Bearer" prefix
@@ -65,20 +67,30 @@ public class PanServiceImpl implements Panservice {
 //		  "\", \"returnIndividualTaxComplianceInfo\": \"" +
 //		  dto.getReturnIndividualTaxComplianceInfo() + "\"}";
 
+		Gson gson = new Gson();
+
+		String requestBodyJson = gson.toJson(dto);
+
 		panrequest.setNumber(dto.getNumber());
 		panrequest.setReturnIndividualTaxComplianceInfo(dto.getReturnIndividualTaxComplianceInfo());
 
-		HttpEntity<String> entity = new HttpEntity(panrequest, headers);
+		HttpEntity<String> entity = new HttpEntity(requestBodyJson, headers);
 
-//		Object response = restTemplate.postForObject(APIURL, request,Object.class);
-//		return response;
-
+		ApiLog apiLog = new ApiLog();
+		apiLog.setUrl(requestUrl);
+		apiLog.setRequestBody(requestBodyJson);
+		apiLog.setStatusCode(statusCode);
 		try {
-			Object response = restTemplate.postForObject(APIURL, entity, Object.class);
-			return response;
+			String response1 = restTemplate.postForObject(APIURL, entity, String.class);
+			apiLog.setResponseBody(response1);
+			apiLog.setStatusCode(HttpStatus.OK.value());
+			return response1;
 		} catch (HttpClientErrorException.BadRequest e) {
 			String errorMessage = e.getResponseBodyAsString();
 
+			apiLog.setResponseBody(errorMessage);
+			apiLog.setStatusCode(e.getStatusCode().value());
+			;
 			logger.error("Error Response: {}", errorMessage);
 			if (errorMessage.contains("PAN number is not valid")) {
 				throw new InvalidPanNumberException("PAN number is not valid");
@@ -93,9 +105,8 @@ public class PanServiceImpl implements Panservice {
 								"\\\"requestBody.returnIndividualTaxComplianceInfo\\\" is not allowed to be empty")) {
 							throw new InvalidIndividualException(
 									"\\\"requestBody.returnIndividualTaxComplianceInfo\\\" is not allowed to be empty");
-						} else if (errorMessage.contains("401 Unauthorized: [no body]")) {
-							throw new UnauthorizedException("401 Unauthorized: [no body]");
 						} else {
+
 							throw e;
 						}
 
@@ -103,6 +114,25 @@ public class PanServiceImpl implements Panservice {
 
 				}
 			}
+		} catch (HttpClientErrorException.Conflict e) {
+			String errorMessage = e.getResponseBodyAsString();
+			logger.error("Error Response: {}", errorMessage);
+			if (errorMessage.contains("Upstream Down")) {
+				throw new UpstreamDownException("Upstream Down");
+			} else {
+				throw e;
+			}
+		} catch (HttpClientErrorException.Unauthorized e) {
+			String errorMessage = e.getResponseBodyAsString();
+			logger.error("Error Response: {}", errorMessage);
+			if (errorMessage.contains("[no body]")) {
+				throw new UnauthorizedException("[no body]");
+			} else {
+				throw e;
+			}
+		} finally {
+			apiLogRepository.save(apiLog);
 		}
-    }
+
 	}
+}

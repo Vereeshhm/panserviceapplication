@@ -61,12 +61,20 @@ public class GlobalExceptionHandler {
 	}
 
 	@ExceptionHandler(UnauthorizedException.class)
-	public ResponseEntity<String> handleNoApiKeyException(UnauthorizedException ex) {
-		// Create a custom response body
-		String responseBody = "{\"error\": " + "{\"name\": \"error\", "
-				+ "\"message\": \"401 Unauthorized: [no body]\", " + "\"status\": \"Bad Request\", "
-				+ "\"statusCode\": 401}}";
-		// Return the custom response with HTTP status code 400
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseBody);
+	public ResponseEntity<Object> handleNoApiKeyException(UnauthorizedException ex) {
+
+		if (ex.getMessage().equals("[no body]")) {
+			throw new UnauthorizedException("[no body]");
+		} else {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+		}
+	}
+
+	@ExceptionHandler(UpstreamDownException.class)
+	public ResponseEntity<Object> handleUpstreamDownException(UpstreamDownException ex) {
+		String responseBody = "{\"error\":" + "{\"statusCode\":409," + "\"name\":\"error\"," + "\"message\":\""
+				+ ex.getMessage() + "\"," + "\"status\":409," + "\"reason\":\"Error From Upstream\","
+				+ "\"type\":\"Conflict\"" + "}}";
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(responseBody);
 	}
 }

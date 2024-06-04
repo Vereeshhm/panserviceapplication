@@ -1,16 +1,19 @@
 package com.example.panservice.Service;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.example.panservice.Entity.pandto;
-//import com.example.panservice.Response.Panresponse;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 
 
 @Service
 public interface Panservice {
 
 
-	public Object getPanDetails(pandto dto);
+	public String getPanDetails(pandto dto,HttpServletRequest request,
+			HttpServletResponse response);
 
 }

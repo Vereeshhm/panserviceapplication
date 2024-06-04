@@ -1,36 +1,31 @@
 package com.example.panservice.Entity;
 
-
-
-import lombok.Data;
-
 public class pandto {
 
-	
-	    private String number;
-	    private String returnIndividualTaxComplianceInfo;
+	private String number;
+	private String returnIndividualTaxComplianceInfo;
 
-	  
+	// Getters and setters
+	public String getNumber() {
+		return number;
+	}
 
-	    // Getters and setters
-	    public String getNumber() {
-	        return number;
-	    }
+	public void setNumber(String number) {
+		this.number = number;
+	}
 
-	    public void setNumber(String number) {
-	        this.number = number;
-	    }
+	public String getReturnIndividualTaxComplianceInfo() {
+		return returnIndividualTaxComplianceInfo;
+	}
 
-		public String getReturnIndividualTaxComplianceInfo() {
-			return returnIndividualTaxComplianceInfo;
-		}
+	public void setReturnIndividualTaxComplianceInfo(String returnIndividualTaxComplianceInfo) {
+		this.returnIndividualTaxComplianceInfo = returnIndividualTaxComplianceInfo;
+	}
 
-		public void setReturnIndividualTaxComplianceInfo(String returnIndividualTaxComplianceInfo) {
-			this.returnIndividualTaxComplianceInfo = returnIndividualTaxComplianceInfo;
-		}
+	@Override
+	public String toString() {
+		return "pandto [number=" + number + ", returnIndividualTaxComplianceInfo=" + returnIndividualTaxComplianceInfo
+				+ "]";
+	}
 
-	   
-	    
-	    
-	    
-	   }
+}
