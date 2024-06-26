@@ -1,6 +1,7 @@
 package com.example.panservice.Entity;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 import org.hibernate.annotations.Type;
 
@@ -82,6 +83,13 @@ public class ApiLog {
 
 	public void setTimestamp(LocalDateTime timestamp) {
 		this.timestamp = timestamp;
+	}
+	
+	public ApiLog() {
+		this.timestamp=LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+	}
+	public void setResponseBodyAsJson(String message) {
+		this.responseBody = "{\"message\": \"" + message.replace("\"", "\\\"") + "\"}";
 	}
 
 }

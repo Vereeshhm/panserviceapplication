@@ -17,12 +17,6 @@ import com.example.panservice.Entity.pandto;
 import com.example.panservice.Repository.ApiLogRepository;
 import com.example.panservice.Service.Panservice;
 import com.example.panservice.Utils.PropertiesConfig;
-import com.example.panservice.exception.InvalidEmptyPanException;
-import com.example.panservice.exception.InvalidIndividualException;
-import com.example.panservice.exception.InvalidPanNumberException;
-import com.example.panservice.exception.Missingnumberexeception;
-import com.example.panservice.exception.UnauthorizedException;
-import com.example.panservice.exception.UpstreamDownException;
 import com.google.gson.Gson;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -52,87 +46,75 @@ public class PanServiceImpl implements Panservice {
 	@Override
 	public String getPanDetails(pandto dto, HttpServletRequest request, HttpServletResponse response) {
 
-		String APIURL = propertiesConfig.getPanApiURL();
+		ApiLog apiLog = new ApiLog();
+		String response1 = null;
+		try {
+			String APIURL = propertiesConfig.getPanApiURL();
 
-		String requestUrl = request.getRequestURI().toString();
+			String requestUrl = request.getRequestURI().toString();
 
-		int statusCode = response.getStatus();
+			pandto panrequest = new pandto();
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_JSON);
 
-		pandto panrequest = new pandto();
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
-		headers.set("Authorization", apiKey); // Include API key directly without "Bearer" prefix
+			headers.set("Authorization", apiKey);
 
 //		 String requestBody = "{\"number\": \"" + dto.getNumber() +
 //		  "\", \"returnIndividualTaxComplianceInfo\": \"" +
 //		  dto.getReturnIndividualTaxComplianceInfo() + "\"}";
 
-		Gson gson = new Gson();
+			Gson gson = new Gson();
 
-		String requestBodyJson = gson.toJson(dto);
+			String requestBodyJson = gson.toJson(dto);
 
-		panrequest.setNumber(dto.getNumber());
-		panrequest.setReturnIndividualTaxComplianceInfo(dto.getReturnIndividualTaxComplianceInfo());
+			panrequest.setNumber(dto.getNumber());
+			panrequest.setReturnIndividualTaxComplianceInfo(dto.getReturnIndividualTaxComplianceInfo());
 
-		HttpEntity<String> entity = new HttpEntity(requestBodyJson, headers);
+			HttpEntity<String> entity = new HttpEntity(requestBodyJson, headers);
 
-		ApiLog apiLog = new ApiLog();
-		apiLog.setUrl(requestUrl);
-		apiLog.setRequestBody(requestBodyJson);
-		apiLog.setStatusCode(statusCode);
-		try {
-			String response1 = restTemplate.postForObject(APIURL, entity, String.class);
+			apiLog.setUrl(requestUrl);
+			apiLog.setRequestBody(requestBodyJson);
+
+			response1 = restTemplate.postForObject(APIURL, entity, String.class);
 			apiLog.setResponseBody(response1);
 			apiLog.setStatusCode(HttpStatus.OK.value());
 			return response1;
-		} catch (HttpClientErrorException.BadRequest e) {
-			String errorMessage = e.getResponseBodyAsString();
+		} catch (HttpClientErrorException.TooManyRequests e) {
+			// Handling Too Many Requests Exception specifically
+			apiLog.setStatusCode(HttpStatus.TOO_MANY_REQUESTS.value());
 
-			apiLog.setResponseBody(errorMessage);
-			apiLog.setStatusCode(e.getStatusCode().value());
-			;
-			logger.error("Error Response: {}", errorMessage);
-			if (errorMessage.contains("PAN number is not valid")) {
-				throw new InvalidPanNumberException("PAN number is not valid");
-			} else {
-				if (errorMessage.contains("number is not allowed to be empty.")) {
-					throw new InvalidEmptyPanException("number is not allowed to be empty.");
-				} else {
-					if (errorMessage.contains("number must be a string")) {
-						throw new Missingnumberexeception("number must be a string");
-					} else {
-						if (errorMessage.contains(
-								"\\\"requestBody.returnIndividualTaxComplianceInfo\\\" is not allowed to be empty")) {
-							throw new InvalidIndividualException(
-									"\\\"requestBody.returnIndividualTaxComplianceInfo\\\" is not allowed to be empty");
-						} else {
-
-							throw e;
-						}
-
-					}
-
-				}
-			}
-		} catch (HttpClientErrorException.Conflict e) {
-			String errorMessage = e.getResponseBodyAsString();
-			logger.error("Error Response: {}", errorMessage);
-			if (errorMessage.contains("Upstream Down")) {
-				throw new UpstreamDownException("Upstream Down");
-			} else {
-				throw e;
-			}
+			response1 = e.getResponseBodyAsString();
+			System.out.println(response1 + "Response");
+			apiLog.setResponseBodyAsJson("API rate limit exceeded");
 		} catch (HttpClientErrorException.Unauthorized e) {
-			String errorMessage = e.getResponseBodyAsString();
-			logger.error("Error Response: {}", errorMessage);
-			if (errorMessage.contains("[no body]")) {
-				throw new UnauthorizedException("[no body]");
-			} else {
-				throw e;
-			}
-		} finally {
+			// Handling Unauthorized Exception specifically
+			apiLog.setStatusCode(HttpStatus.UNAUTHORIZED.value());
+
+			response1 = e.getResponseBodyAsString();
+			System.out.println(response1 + "Response");
+			apiLog.setResponseBodyAsJson("No API key found in request");
+
+		}
+
+		catch (HttpClientErrorException e) {
+			apiLog.setStatusCode(e.getStatusCode().value());
+
+			response1 = e.getResponseBodyAsString();
+			System.out.println(response1 + " Response ");
+			apiLog.setResponseBody(response1);
+		}
+
+		catch (Exception e) {
+			apiLog.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+
+			response1 = e.getMessage();
+			apiLog.setResponseBody(response1);
+		}
+
+		finally {
 			apiLogRepository.save(apiLog);
 		}
+		return response1;
 
 	}
 }
